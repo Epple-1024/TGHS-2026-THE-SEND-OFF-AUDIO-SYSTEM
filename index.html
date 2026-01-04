@@ -6,7 +6,16 @@
     <title>TG SENIOR SEND-OFF 2026 AUDIO SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { user-select: none; -webkit-user-select: none; }
+        /* 基本設定：スクロール可能にしつつ、選択不可にする */
+        body { 
+            user-select: none; 
+            -webkit-user-select: none; 
+            /* 見切れ防止：高さ制限を緩和 */
+            min-height: 100vh;
+            /* 常にスクロールバーが出る可能性を考慮してデザイン崩れを防ぐ */
+            overflow-y: auto; 
+        }
+
         @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .animate-pulse-slow { animation: pulse-slow 3s infinite; }
         .tabular-nums { font-variant-numeric: tabular-nums; }
@@ -15,12 +24,12 @@
         .scene-btn.active { opacity: 1; border-bottom-color: #3b82f6; color: #fff; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
         .scene-btn:disabled { cursor: not-allowed; opacity: 0.2; }
 
-        /* Custom Missile Switch Toggle */
+        /* Custom Missile Switch Toggle (Rounded & Larger) */
         .missile-switch {
             position: relative;
             display: inline-block;
-            width: 80px;
-            height: 40px;
+            width: 100px; /* 横幅アップ */
+            height: 52px; /* 高さアップ */
         }
         .missile-switch input { 
             opacity: 0;
@@ -36,22 +45,22 @@
             bottom: 0;
             background-color: #374151; /* gray-700 */
             transition: .4s;
-            border-radius: 4px;
-            border: 1px solid #4b5563;
+            border-radius: 9999px; /* 完全な角丸 */
+            border: 2px solid #4b5563;
         }
         .slider:before {
             position: absolute;
             content: "";
-            height: 32px;
-            width: 32px;
-            left: 4px;
-            bottom: 3px;
+            height: 44px; /* ノブサイズアップ */
+            width: 44px;
+            left: 3px;
+            bottom: 2px;
             background-color: #9ca3af; /* gray-400 */
             transition: .4s;
-            border-radius: 2px;
+            border-radius: 50%; /* 完全な丸 */
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-        /* Striped Danger Pattern for Background */
+        /* Striped Danger Pattern */
         .missile-switch input:checked + .slider {
             background: repeating-linear-gradient(
                 45deg,
@@ -63,7 +72,7 @@
             border-color: #ef4444;
         }
         .missile-switch input:checked + .slider:before {
-            transform: translateX(40px);
+            transform: translateX(46px); /* 移動距離調整 */
             background-color: #fff;
         }
 
@@ -75,26 +84,22 @@
             cursor: not-allowed;
             box-shadow: none !important;
         }
-        /* Disabled but visible style */
+        
         .hidden-visually {
-            opacity: 0;
-            pointer-events: none;
-            height: 0;
-            margin: 0;
-            padding: 0;
+            display: none !important; /* レイアウト崩れ防止のためdisplay:noneに変更 */
         }
     </style>
 </head>
-<body class="bg-black text-white h-screen flex flex-col items-center justify-center font-sans overflow-hidden relative">
+<body class="bg-black text-white flex flex-col items-center justify-center font-sans relative py-10">
 
-    <header class="absolute top-6 left-6 text-gray-500 text-xs tracking-[0.2em] font-light">
+    <header class="absolute top-6 left-6 text-gray-500 text-xs tracking-[0.2em] font-light hidden md:block">
         TG SENIOR SEND-OFF 2026<br>
         AUDIO PLAYBACK SYSTEM
     </header>
 
-    <div class="absolute top-6 right-6 text-right text-gray-600 text-xs tracking-widest font-mono">
+    <div class="absolute top-6 right-6 text-right text-gray-600 text-xs tracking-widest font-mono hidden md:block">
         SYS DEV: KEITA EBA<br>
-        BUILD: RELEASE_3.0_FINAL
+        BUILD: RELEASE_3.1_UI
     </div>
 
     <div class="absolute top-6 flex gap-8 z-20">
@@ -106,7 +111,7 @@
         </button>
     </div>
 
-    <div id="status-display" class="mb-4 text-center w-full px-4 mt-8">
+    <div id="status-display" class="mb-8 text-center w-full px-4 mt-12">
         <p class="text-gray-500 text-sm mb-2 tracking-[0.3em]">SYSTEM STATUS</p>
         <h1 id="status-text" class="text-5xl md:text-7xl font-bold tracking-widest text-gray-500 mb-2 transition-colors duration-300 font-mono">STANDBY</h1>
         <p id="sub-status" class="text-xl text-yellow-500 h-6 font-mono"></p>
@@ -133,19 +138,19 @@
 
     <div class="flex flex-col gap-4 w-full max-w-lg px-6 z-10 items-center transition-all duration-500">
         
-        <button id="btn-load" class="w-full py-6 bg-slate-800 hover:bg-slate-700 text-blue-100 rounded-lg text-xl font-bold tracking-widest transition border border-slate-600 shadow-lg">
+        <button id="btn-load" class="w-full h-24 bg-slate-800 hover:bg-slate-700 text-blue-100 rounded-xl text-xl font-bold tracking-widest transition border border-slate-600 shadow-lg flex items-center justify-center">
             INITIALIZE SYSTEM
         </button>
 
-        <button id="btn-start" disabled class="hidden-visually w-full py-8 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-3xl font-bold tracking-widest transition shadow-[0_0_40px_rgba(6,95,70,0.5)] disabled:opacity-20 disabled:cursor-not-allowed">
+        <button id="btn-start" disabled class="hidden-visually w-full h-24 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-3xl font-bold tracking-widest transition shadow-[0_0_40px_rgba(6,95,70,0.5)] disabled:opacity-20 disabled:cursor-not-allowed items-center justify-center">
             COMMENCE PLAYBACK
         </button>
 
-        <button id="btn-finish" disabled class="hidden-visually locked-btn w-full py-8 rounded-xl text-3xl font-bold tracking-widest transition duration-200">
+        <button id="btn-finish" disabled class="hidden-visually locked-btn w-full h-24 rounded-xl text-3xl font-bold tracking-widest transition duration-200 items-center justify-center">
             TRIGGER FINALE
         </button>
 
-        <div id="safety-container" class="hidden-visually w-full flex items-center justify-center gap-4 mt-2 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+        <div id="safety-container" class="hidden-visually w-full h-24 flex items-center justify-center gap-6 mt-2 bg-gray-900/50 rounded-xl border border-gray-800">
             <span class="text-xs text-gray-500 tracking-widest uppercase w-24 text-right">Safety Lock</span>
             
             <label class="missile-switch">
@@ -158,7 +163,7 @@
 
     </div>
 
-    <div class="absolute bottom-6 left-6 z-0 max-w-md opacity-70">
+    <div class="absolute bottom-6 left-6 z-0 max-w-md opacity-70 hidden md:block">
         <p class="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Now Loading / Playing</p>
         <p id="music-info" class="text-gray-300 text-xs font-mono tracking-wide leading-relaxed">
             </p>
@@ -254,11 +259,11 @@
 
         function showElement(el) {
             el.classList.remove('hidden-visually');
-            el.classList.remove('hidden');
+            el.classList.add('flex'); // flexで表示して中央揃えを維持
         }
         function hideElement(el) {
             el.classList.add('hidden-visually');
-            // hiddenクラスをつけるとレイアウトが詰まるので、visually hiddenで高さを0にするCSSで制御
+            el.classList.remove('flex');
         }
 
         // --- Safety Switch Logic ---
@@ -332,14 +337,11 @@
             els.dispRemain.innerText = "--:--.-";
             els.dispLimit.className = "text-3xl font-mono tabular-nums text-gray-600";
             
-            resetSafety(); // This resets buttons visibility too
+            resetSafety();
 
-            // If system is loaded (audioCtx exists), show Start button
             if (audioCtx) {
                 hideElement(els.btnLoad);
                 showElement(els.btnStart);
-                // Finish & Safety are hidden until Start is pressed? 
-                // No, let's keep them hidden until start to reduce clutter
             }
         }
 
@@ -371,7 +373,6 @@
                 els.statusText.innerText = "SYSTEM READY";
                 els.statusText.className = "text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)] text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
                 
-                // UI Transition
                 hideElement(els.btnLoad);
                 showElement(els.btnStart);
                 els.btnStart.disabled = false;
@@ -447,7 +448,7 @@
 
             els.btnFinish.disabled = true; 
             els.safetyToggle.disabled = true;
-            // Keep button visible but locked state
+            
             els.btnFinish.classList.add('locked-btn');
             els.btnFinish.classList.remove('bg-rose-900');
 
