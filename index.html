@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TGHS 2026 / THE SEND-OFF / AUDIO SYSTEM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { user-select: none; -webkit-user-select: none; }
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-slow { animation: pulse-slow 3s infinite; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        
+        /* Scene Toggle Styles */
+        .scene-btn { transition: all 0.3s ease; border-bottom: 2px solid transparent; opacity: 0.5; }
+        .scene-btn.active { opacity: 1; border-bottom-color: #3b82f6; color: #fff; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .scene-btn:disabled { cursor: not-allowed; opacity: 0.2; }
+    </style>
+</head>
+<body class="bg-black text-white h-screen flex flex-col items-center justify-center font-sans overflow-hidden relative">
+
+    <header class="absolute top-6 left-6 text-gray-500 text-xs tracking-[0.2em] font-light">
+        TGHS 2026 / THE SEND-OFF<br>
+        AUDIO PLAYBACK SYSTEM
+    </header>
+
+    <div class="absolute top-6 right-6 text-right text-gray-600 text-xs tracking-widest font-mono">
+        SYS DEV: KEITA EBA<br>
+        BUILD: RELEASE_1.0
+    </div>
+
+    <div class="absolute top-6 flex gap-8 z-20">
+        <button id="tab-entrance" class="scene-btn active text-lg font-bold tracking-widest uppercase pb-1" onclick="switchScene('ENTRANCE')">
+            ENTRANCE
+        </button>
+        <button id="tab-exit" class="scene-btn text-lg font-bold tracking-widest uppercase pb-1" onclick="switchScene('EXIT')">
+            EXIT
+        </button>
+    </div>
+
+    <div id="status-display" class="mb-8 text-center w-full px-4 mt-12">
+        <p class="text-gray-500 text-sm mb-2 tracking-[0.3em]">SYSTEM STATUS</p>
+        <h1 id="status-text" class="text-5xl md:text-7xl font-bold tracking-widest text-gray-500 mb-2 transition-colors duration-300 font-mono">STANDBY</h1>
+        <p id="sub-status" class="text-xl text-yellow-500 h-6 font-mono"></p>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto mt-10 p-6 border border-gray-800 rounded-xl bg-gray-900/40 backdrop-blur-sm">
+            
+            <div class="flex flex-col border-b md:border-b-0 md:border-r border-gray-700 pb-2 md:pb-0">
+                <span class="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Total Elapsed</span>
+                <span id="disp-total" class="text-3xl font-mono tabular-nums text-white">00:00.0</span>
+            </div>
+            
+            <div class="flex flex-col border-b md:border-b-0 md:border-r border-gray-700 pb-2 md:pb-0">
+                <span class="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Current Cycle</span>
+                <span id="disp-loop" class="text-3xl font-mono tabular-nums text-blue-400"># --</span>
+            </div>
+
+            <div class="flex flex-col border-r-0 md:border-r border-gray-700">
+                <span class="text-gray-500 text-[10px] uppercase tracking-widest mb-1 text-rose-400">Decision Window</span>
+                <span id="disp-limit" class="text-3xl font-mono tabular-nums text-gray-600">--:--.-</span>
+            </div>
+
+            <div class="flex flex-col">
+                <span id="label-remain" class="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Cycle Remaining</span>
+                <span id="disp-remain" class="text-3xl font-mono tabular-nums text-emerald-500">--:--.-</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-5 w-full max-w-lg px-6 z-10">
+        <button id="btn-load" class="w-full py-6 bg-slate-800 hover:bg-slate-700 text-blue-100 rounded-lg text-xl font-bold tracking-widest transition border border-slate-600 shadow-lg">
+            INITIALIZE SYSTEM
+        </button>
+
+        <button id="btn-start" disabled class="hidden w-full py-10 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-3xl font-bold tracking-widest transition shadow-[0_0_40px_rgba(6,95,70,0.5)] disabled:opacity-20 disabled:cursor-not-allowed">
+            COMMENCE PLAYBACK
+        </button>
+
+        <button id="btn-finish" disabled class="hidden w-full py-10 bg-rose-900 hover:bg-rose-800 text-white rounded-xl text-3xl font-bold tracking-widest transition shadow-[0_0_40px_rgba(136,19,55,0.5)] disabled:opacity-20 disabled:cursor-not-allowed">
+            TRIGGER FINALE
+        </button>
+    </div>
+
+    <div class="absolute bottom-6 left-6 z-0 max-w-md opacity-70">
+        <p class="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Now Loading / Playing</p>
+        <p id="music-info" class="text-gray-300 text-xs font-mono tracking-wide leading-relaxed">
+            </p>
+    </div>
+
+    <div class="absolute bottom-6 right-6 z-20">
+        <button onclick="location.reload()" class="text-[10px] text-gray-700 hover:text-red-500 border border-gray-800 hover:border-red-900 px-4 py-2 rounded tracking-widest uppercase transition-colors">
+            System Reset
+        </button>
+    </div>
+
+    <script>
+        // ==========================================
+        //  CONFIGURATION AREA
+        // ==========================================
+        
+        const SCENE_CONFIG = {
+            ENTRANCE: {
+                junctionPoint: 64.8, // Seconds
+                musicTitle: "UE WO MUITE ARUKOU (Piano & Brass Qt. Mix)",
+                musicArtist: "Comp. Hachidai Nakamura / Mix. K.Eba",
+                files: {
+                    intro: './audio/intro.m4a',
+                    loop: './audio/loop.m4a',
+                    bridge: './audio/bridge.m4a',
+                    outro: './audio/outro.m4a'
+                }
+            },
+            EXIT: {
+                junctionPoint: 30.0, // ★退場用の設定はここに記入★
+                musicTitle: "EXIT THEME SONG (TBD)",
+                musicArtist: "Artist Name",
+                files: {
+                    intro: './audio/exit_intro.m4a',  // ★退場用ファイル名★
+                    loop: './audio/exit_loop.m4a',
+                    bridge: './audio/exit_bridge.m4a',
+                    outro: './audio/exit_outro.m4a'
+                }
+            }
+        };
+
+        // ==========================================
+
+        let currentScene = 'ENTRANCE';
+        let audioCtx;
+        let buffers = {};
+        let nodes = { intro: null, loop: null, bridge: null, outro: null };
+        
+        let globalStartTime = 0;
+        let loopStartTime = 0; 
+        let isPlaying = false;
+        let currentPhase = "STANDBY"; 
+        let finishScheduledTime = 0; 
+
+        // DOM Elements
+        const els = {
+            statusText: document.getElementById('status-text'),
+            subStatus: document.getElementById('sub-status'),
+            btnLoad: document.getElementById('btn-load'),
+            btnStart: document.getElementById('btn-start'),
+            btnFinish: document.getElementById('btn-finish'),
+            dispTotal: document.getElementById('disp-total'),
+            dispLoop: document.getElementById('disp-loop'),
+            dispRemain: document.getElementById('disp-remain'),
+            dispLimit: document.getElementById('disp-limit'),
+            labelRemain: document.getElementById('label-remain'),
+            musicInfo: document.getElementById('music-info'),
+            tabEntrance: document.getElementById('tab-entrance'),
+            tabExit: document.getElementById('tab-exit')
+        };
+
+        // Initialize Display
+        updateMusicInfo();
+
+        // --- Helper Functions ---
+        function formatTime(sec) {
+            if (sec < 0) sec = 0;
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            const ms = Math.floor((sec % 1) * 10);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms}`;
+        }
+
+        function updateMusicInfo() {
+            const conf = SCENE_CONFIG[currentScene];
+            els.musicInfo.innerHTML = `<span class="text-white">${conf.musicTitle}</span><br>${conf.musicArtist}`;
+        }
+
+        // --- Scene Switching Logic ---
+        window.switchScene = function(scene) {
+            // Lock if loaded or playing
+            if (audioCtx) return; 
+
+            currentScene = scene;
+            
+            // Toggle Tabs
+            if (scene === 'ENTRANCE') {
+                els.tabEntrance.classList.add('active');
+                els.tabExit.classList.remove('active');
+            } else {
+                els.tabEntrance.classList.remove('active');
+                els.tabExit.classList.add('active');
+            }
+
+            // Update UI
+            updateMusicInfo();
+            els.statusText.innerText = "STANDBY";
+            els.statusText.className = "text-5xl md:text-7xl font-bold tracking-widest text-gray-500 mb-2 transition-colors duration-300 font-mono";
+        };
+
+
+        // --- 1. Load ---
+        els.btnLoad.addEventListener('click', async () => {
+            try {
+                // Lock Tabs
+                els.tabEntrance.disabled = true;
+                els.tabExit.disabled = true;
+
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                
+                els.statusText.innerText = "LOADING...";
+                els.statusText.className = "text-yellow-500 animate-pulse text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                els.btnLoad.disabled = true;
+                els.btnLoad.classList.add('opacity-50');
+
+                const conf = SCENE_CONFIG[currentScene];
+
+                for (const [key, url] of Object.entries(conf.files)) {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`FILE MISSING: ${url}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    buffers[key] = await audioCtx.decodeAudioData(arrayBuffer);
+                }
+
+                els.statusText.innerText = "SYSTEM READY";
+                els.statusText.className = "text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)] text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                els.btnLoad.classList.add('hidden');
+                els.btnStart.classList.remove('hidden');
+                els.btnStart.disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                els.statusText.innerText = "LOAD ERROR";
+                els.statusText.className = "text-red-600 text-5xl font-bold mb-2 font-mono";
+                els.subStatus.innerText = err.message; 
+                alert("INITIALIZATION FAILED:\n" + err.message);
+                // Unlock on error to allow retry/switch
+                els.tabEntrance.disabled = false;
+                els.tabExit.disabled = false;
+                els.btnLoad.disabled = false;
+            }
+        });
+
+        // --- 2. Start ---
+        els.btnStart.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            globalStartTime = now;
+            isPlaying = true;
+            currentPhase = "INTRO";
+
+            nodes.intro = audioCtx.createBufferSource();
+            nodes.intro.buffer = buffers.intro;
+            nodes.intro.connect(audioCtx.destination);
+            nodes.intro.start(now);
+
+            nodes.loop = audioCtx.createBufferSource();
+            nodes.loop.buffer = buffers.loop;
+            nodes.loop.loop = true;
+            nodes.loop.connect(audioCtx.destination);
+            
+            loopStartTime = now + buffers.intro.duration;
+            nodes.loop.start(loopStartTime);
+
+            els.btnStart.disabled = true;
+            els.btnStart.classList.add('opacity-30');
+            els.btnFinish.classList.remove('hidden');
+            els.btnFinish.disabled = false;
+            
+            els.statusText.innerText = "PLAYING: INTRO";
+            els.statusText.className = "text-emerald-500 text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+
+            setTimeout(() => {
+                if (currentPhase === "INTRO") {
+                    currentPhase = "LOOP";
+                    els.statusText.innerText = "PLAYING: LOOP";
+                    els.statusText.classList.add("animate-pulse-slow");
+                }
+            }, buffers.intro.duration * 1000);
+
+            requestAnimationFrame(updateDashboard);
+        });
+
+        // --- 3. Finish ---
+        els.btnFinish.addEventListener('click', () => {
+            els.btnFinish.disabled = true;
+            const now = audioCtx.currentTime;
+            const conf = SCENE_CONFIG[currentScene];
+            
+            const elapsedTimeTotal = now - loopStartTime;
+            let currentLoopCount = 0;
+            let currentLoopPos = 0;
+
+            if (elapsedTimeTotal < 0) {
+                currentLoopCount = 0;
+                currentLoopPos = 0;
+            } else {
+                currentLoopCount = Math.floor(elapsedTimeTotal / buffers.loop.duration);
+                currentLoopPos = elapsedTimeTotal % buffers.loop.duration;
+            }
+
+            let transitionTime;
+
+            if (currentLoopPos < conf.junctionPoint) {
+                // SHORTCUT
+                currentPhase = "WAITING_BRIDGE";
+                transitionTime = loopStartTime + (currentLoopCount * buffers.loop.duration) + conf.junctionPoint;
+                finishScheduledTime = transitionTime;
+
+                nodes.loop.stop(transitionTime);
+                nodes.bridge = audioCtx.createBufferSource();
+                nodes.bridge.buffer = buffers.bridge;
+                nodes.bridge.connect(audioCtx.destination);
+                nodes.bridge.start(transitionTime);
+
+                els.statusText.innerText = "SYNCING...";
+                els.statusText.className = "text-yellow-400 animate-pulse text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                els.subStatus.innerText = "SHORTCUT SEQUENCE ENGAGED";
+
+                setTimeout(() => {
+                    currentPhase = "BRIDGE";
+                    els.statusText.innerText = "BRIDGE MODE";
+                    els.statusText.className = "text-orange-500 text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                    els.subStatus.innerText = "ACCELERATING TO FINALE";
+                }, (transitionTime - now) * 1000);
+
+                nodes.bridge.onended = () => {
+                    currentPhase = "FINISHED";
+                    els.statusText.innerText = "COMPLETE";
+                    els.statusText.className = "text-gray-600 text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                    els.subStatus.innerText = "";
+                    isPlaying = false;
+                };
+
+            } else {
+                // FULL LOOP
+                currentPhase = "WAITING_OUTRO";
+                transitionTime = loopStartTime + ((currentLoopCount + 1) * buffers.loop.duration);
+                finishScheduledTime = transitionTime;
+                
+                nodes.loop.stop(transitionTime);
+                nodes.outro = audioCtx.createBufferSource();
+                nodes.outro.buffer = buffers.outro;
+                nodes.outro.connect(audioCtx.destination);
+                nodes.outro.start(transitionTime);
+
+                els.statusText.innerText = "WAITING END";
+                els.statusText.className = "text-blue-400 animate-pulse text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                els.subStatus.innerText = "FULL CYCLE COMPLETION ENGAGED";
+
+                setTimeout(() => {
+                    currentPhase = "OUTRO";
+                    els.statusText.innerText = "FINALE";
+                    els.statusText.className = "text-rose-500 animate-bounce text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                    els.subStatus.innerText = "";
+                }, (transitionTime - now) * 1000);
+
+                nodes.outro.onended = () => {
+                    currentPhase = "FINISHED";
+                    els.statusText.innerText = "COMPLETE";
+                    els.statusText.className = "text-gray-600 text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
+                    isPlaying = false;
+                };
+            }
+        });
+
+        // --- 4. Dashboard ---
+        function updateDashboard() {
+            if (!isPlaying) return;
+
+            const now = audioCtx.currentTime;
+            const conf = SCENE_CONFIG[currentScene];
+            
+            // Total
+            els.dispTotal.innerText = formatTime(now - globalStartTime);
+
+            if (currentPhase === "INTRO") {
+                els.dispLoop.innerText = "# --";
+                els.dispRemain.innerText = formatTime((globalStartTime + buffers.intro.duration) - now);
+                els.labelRemain.innerText = "Loop Starts In";
+                els.dispLimit.innerText = "WAIT";
+                els.dispLimit.className = "text-3xl font-mono tabular-nums text-gray-600";
+
+            } else if (currentPhase === "LOOP") {
+                const loopElapsed = now - loopStartTime;
+                const currentCount = Math.floor(loopElapsed / buffers.loop.duration);
+                const currentPos = loopElapsed % buffers.loop.duration;
+
+                els.dispLoop.innerText = `# ${currentCount + 1}`;
+                
+                // Limit Calculation
+                const timeToJunction = conf.junctionPoint - currentPos;
+                
+                if (timeToJunction > 0) {
+                    els.dispLimit.innerText = formatTime(timeToJunction);
+                    if (timeToJunction < 10) {
+                        els.dispLimit.className = "text-3xl font-mono tabular-nums text-rose-500 font-bold animate-pulse";
+                    } else {
+                        els.dispLimit.className = "text-3xl font-mono tabular-nums text-white";
+                    }
+                } else {
+                    els.dispLimit.innerText = "PASSED";
+                    els.dispLimit.className = "text-3xl font-mono tabular-nums text-gray-700";
+                }
+
+                els.labelRemain.innerText = "Cycle Remaining";
+                els.dispRemain.innerText = formatTime(buffers.loop.duration - currentPos);
+                els.dispRemain.className = "text-3xl font-mono tabular-nums text-emerald-500";
+
+            } else {
+                // Locked
+                els.dispLimit.innerText = "LOCKED";
+                els.dispLimit.className = "text-3xl font-mono tabular-nums text-gray-800";
+
+                if (currentPhase === "WAITING_BRIDGE" || currentPhase === "WAITING_OUTRO") {
+                    const untilSwitch = finishScheduledTime - now;
+                    els.labelRemain.innerText = "Switching In";
+                    els.dispRemain.innerText = formatTime(untilSwitch);
+                    els.dispRemain.className = "text-3xl font-mono tabular-nums text-yellow-500 animate-pulse";
+                } else if (currentPhase === "BRIDGE") {
+                    const elapsed = now - finishScheduledTime;
+                    const remain = buffers.bridge.duration - elapsed;
+                    els.labelRemain.innerText = "Finale Remaining";
+                    els.dispRemain.innerText = formatTime(remain);
+                    els.dispRemain.className = "text-3xl font-mono tabular-nums text-orange-500";
+                } else if (currentPhase === "OUTRO") {
+                    const elapsed = now - finishScheduledTime;
+                    const remain = buffers.outro.duration - elapsed;
+                    els.labelRemain.innerText = "Finale Remaining";
+                    els.dispRemain.innerText = formatTime(remain);
+                    els.dispRemain.className = "text-3xl font-mono tabular-nums text-rose-500";
+                }
+            }
+
+            requestAnimationFrame(updateDashboard);
+        }
+    </script>
+</body>
+</html>
