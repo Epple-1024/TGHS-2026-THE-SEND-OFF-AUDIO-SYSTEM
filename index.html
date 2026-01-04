@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG YOSENKAI 2026 AUDIO SYSTEM</title>
+    <title>TG SENIOR SEND-OFF 2026 AUDIO SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { user-select: none; -webkit-user-select: none; }
@@ -15,22 +15,73 @@
         .scene-btn.active { opacity: 1; border-bottom-color: #3b82f6; color: #fff; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
         .scene-btn:disabled { cursor: not-allowed; opacity: 0.2; }
 
-        /* Safety Switch Style */
-        .toggle-checkbox:checked {
+        /* Custom Missile Switch Toggle */
+        .missile-switch {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 40px;
+        }
+        .missile-switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
             right: 0;
+            bottom: 0;
+            background-color: #374151; /* gray-700 */
+            transition: .4s;
+            border-radius: 4px;
+            border: 1px solid #4b5563;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 32px;
+            width: 32px;
+            left: 4px;
+            bottom: 3px;
+            background-color: #9ca3af; /* gray-400 */
+            transition: .4s;
+            border-radius: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        /* Striped Danger Pattern for Background */
+        .missile-switch input:checked + .slider {
+            background: repeating-linear-gradient(
+                45deg,
+                #7f1d1d,
+                #7f1d1d 10px,
+                #991b1b 10px,
+                #991b1b 20px
+            );
             border-color: #ef4444;
         }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #ef4444;
+        .missile-switch input:checked + .slider:before {
+            transform: translateX(40px);
+            background-color: #fff;
         }
-        
-        /* Button Disabled State (Locked) */
+
+        /* Button Disabled State */
         .locked-btn {
-            background-color: #374151 !important; /* gray-700 */
-            color: #9ca3af !important; /* gray-400 */
+            background-color: #1f2937 !important; /* gray-800 */
+            color: #4b5563 !important; /* gray-600 */
+            border: 1px solid #374151;
             cursor: not-allowed;
             box-shadow: none !important;
-            border: 1px solid #4b5563;
+        }
+        /* Disabled but visible style */
+        .hidden-visually {
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
@@ -43,7 +94,7 @@
 
     <div class="absolute top-6 right-6 text-right text-gray-600 text-xs tracking-widest font-mono">
         SYS DEV: KEITA EBA<br>
-        BUILD: RELEASE_2.0_SAFE
+        BUILD: RELEASE_3.0_FINAL
     </div>
 
     <div class="absolute top-6 flex gap-8 z-20">
@@ -80,31 +131,31 @@
         </div>
     </div>
 
-    <div class="flex flex-col gap-4 w-full max-w-lg px-6 z-10 items-center">
+    <div class="flex flex-col gap-4 w-full max-w-lg px-6 z-10 items-center transition-all duration-500">
         
         <button id="btn-load" class="w-full py-6 bg-slate-800 hover:bg-slate-700 text-blue-100 rounded-lg text-xl font-bold tracking-widest transition border border-slate-600 shadow-lg">
             INITIALIZE SYSTEM
         </button>
 
-        <button id="btn-start" disabled class="hidden w-full py-8 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-3xl font-bold tracking-widest transition shadow-[0_0_40px_rgba(6,95,70,0.5)] disabled:opacity-20 disabled:cursor-not-allowed">
+        <button id="btn-start" disabled class="hidden-visually w-full py-8 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-3xl font-bold tracking-widest transition shadow-[0_0_40px_rgba(6,95,70,0.5)] disabled:opacity-20 disabled:cursor-not-allowed">
             COMMENCE PLAYBACK
         </button>
 
-        <div id="finale-container" class="hidden w-full flex-col gap-2">
-            
-            <div class="flex items-center justify-between bg-gray-900/80 rounded-lg px-4 py-2 border border-gray-700">
-                <span class="text-xs text-gray-400 tracking-widest uppercase">Safety Lock</span>
-                <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="safety-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 transition-all duration-300 left-0"/>
-                    <label for="safety-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
-                </div>
-                <span id="safety-status" class="text-xs font-bold tracking-widest uppercase text-emerald-500">LOCKED</span>
-            </div>
+        <button id="btn-finish" disabled class="hidden-visually locked-btn w-full py-8 rounded-xl text-3xl font-bold tracking-widest transition duration-200">
+            TRIGGER FINALE
+        </button>
 
-            <button id="btn-finish" disabled class="locked-btn w-full py-8 rounded-xl text-3xl font-bold tracking-widest transition duration-200">
-                TRIGGER FINALE
-            </button>
+        <div id="safety-container" class="hidden-visually w-full flex items-center justify-center gap-4 mt-2 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+            <span class="text-xs text-gray-500 tracking-widest uppercase w-24 text-right">Safety Lock</span>
+            
+            <label class="missile-switch">
+                <input type="checkbox" id="safety-toggle">
+                <span class="slider"></span>
+            </label>
+            
+            <span id="safety-status" class="text-xs font-bold tracking-widest uppercase text-emerald-600 w-24 text-left">SECURE</span>
         </div>
+
     </div>
 
     <div class="absolute bottom-6 left-6 z-0 max-w-md opacity-70">
@@ -170,7 +221,7 @@
             btnLoad: document.getElementById('btn-load'),
             btnStart: document.getElementById('btn-start'),
             btnFinish: document.getElementById('btn-finish'),
-            finaleContainer: document.getElementById('finale-container'),
+            safetyContainer: document.getElementById('safety-container'),
             safetyToggle: document.getElementById('safety-toggle'),
             safetyStatus: document.getElementById('safety-status'),
             
@@ -201,25 +252,34 @@
             els.musicInfo.innerHTML = `<span class="text-white">${conf.musicTitle}</span><br>${conf.musicArtist}`;
         }
 
+        function showElement(el) {
+            el.classList.remove('hidden-visually');
+            el.classList.remove('hidden');
+        }
+        function hideElement(el) {
+            el.classList.add('hidden-visually');
+            // hiddenクラスをつけるとレイアウトが詰まるので、visually hiddenで高さを0にするCSSで制御
+        }
+
         // --- Safety Switch Logic ---
         els.safetyToggle.addEventListener('change', (e) => {
             if (e.target.checked) {
-                // UNLOCKED (ARMED)
+                // ARMED
                 els.safetyStatus.innerText = "ARMED";
-                els.safetyStatus.classList.replace("text-emerald-500", "text-rose-500");
+                els.safetyStatus.classList.replace("text-emerald-600", "text-rose-500");
                 els.safetyStatus.classList.add("animate-pulse");
                 
-                // Button Activation
+                // Unlock Finish Button
                 els.btnFinish.disabled = false;
                 els.btnFinish.classList.remove('locked-btn');
                 els.btnFinish.classList.add('bg-rose-900', 'hover:bg-rose-800', 'text-white', 'shadow-[0_0_40px_rgba(136,19,55,0.5)]');
             } else {
                 // LOCKED
-                els.safetyStatus.innerText = "LOCKED";
-                els.safetyStatus.classList.replace("text-rose-500", "text-emerald-500");
+                els.safetyStatus.innerText = "SECURE";
+                els.safetyStatus.classList.replace("text-rose-500", "text-emerald-600");
                 els.safetyStatus.classList.remove("animate-pulse");
 
-                // Button Deactivation
+                // Lock Finish Button
                 els.btnFinish.disabled = true;
                 els.btnFinish.classList.add('locked-btn');
                 els.btnFinish.classList.remove('bg-rose-900', 'hover:bg-rose-800', 'text-white', 'shadow-[0_0_40px_rgba(136,19,55,0.5)]');
@@ -228,13 +288,18 @@
 
         function resetSafety() {
             els.safetyToggle.checked = false;
-            els.safetyStatus.innerText = "LOCKED";
-            els.safetyStatus.classList.replace("text-rose-500", "text-emerald-500");
+            els.safetyStatus.innerText = "SECURE";
+            els.safetyStatus.classList.replace("text-rose-500", "text-emerald-600");
             els.safetyStatus.classList.remove("animate-pulse");
             els.btnFinish.disabled = true;
             els.btnFinish.classList.add('locked-btn');
             els.btnFinish.classList.remove('bg-rose-900', 'hover:bg-rose-800', 'text-white', 'shadow-[0_0_40px_rgba(136,19,55,0.5)]');
-            els.finaleContainer.classList.add('hidden');
+            
+            // Hide everything except Load button initially
+            hideElement(els.btnStart);
+            hideElement(els.btnFinish);
+            hideElement(els.safetyContainer);
+            showElement(els.btnLoad);
         }
 
 
@@ -267,11 +332,15 @@
             els.dispRemain.innerText = "--:--.-";
             els.dispLimit.className = "text-3xl font-mono tabular-nums text-gray-600";
             
-            els.btnStart.disabled = false;
-            els.btnStart.classList.remove('opacity-30');
-            els.btnStart.classList.remove('hidden');
-            
-            resetSafety();
+            resetSafety(); // This resets buttons visibility too
+
+            // If system is loaded (audioCtx exists), show Start button
+            if (audioCtx) {
+                hideElement(els.btnLoad);
+                showElement(els.btnStart);
+                // Finish & Safety are hidden until Start is pressed? 
+                // No, let's keep them hidden until start to reduce clutter
+            }
         }
 
         // --- 1. Load ---
@@ -301,8 +370,10 @@
 
                 els.statusText.innerText = "SYSTEM READY";
                 els.statusText.className = "text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)] text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
-                els.btnLoad.classList.add('hidden');
-                els.btnStart.classList.remove('hidden');
+                
+                // UI Transition
+                hideElement(els.btnLoad);
+                showElement(els.btnStart);
                 els.btnStart.disabled = false;
                 
                 els.tabEntrance.disabled = false;
@@ -317,6 +388,7 @@
                 els.tabEntrance.disabled = false;
                 els.tabExit.disabled = false;
                 els.btnLoad.disabled = false;
+                els.btnLoad.classList.remove('opacity-50');
             }
         });
 
@@ -350,13 +422,10 @@
             loopStartTime = now + introDuration;
             nodes.loop.start(loopStartTime);
 
-            els.btnStart.disabled = true;
-            els.btnStart.classList.add('opacity-30');
-            els.btnStart.classList.add('hidden'); // Hide Start btn
-
-            // Show Safety & Finale container
-            els.finaleContainer.classList.remove('hidden');
-            els.finaleContainer.classList.add('flex');
+            // Hide Start, Show Finish & Safety
+            hideElement(els.btnStart);
+            showElement(els.btnFinish);
+            showElement(els.safetyContainer);
             
             els.statusText.innerText = "PLAYING: INTRO";
             els.statusText.className = "text-emerald-500 text-5xl md:text-7xl font-bold tracking-widest mb-2 font-mono";
@@ -374,12 +443,13 @@
 
         // --- 3. Finish ---
         els.btnFinish.addEventListener('click', () => {
-            // Safety Check: if disabled (locked), do nothing
             if (els.btnFinish.disabled) return;
 
-            els.btnFinish.disabled = true; // Lock immediately
-            // Disable safety toggle
+            els.btnFinish.disabled = true; 
             els.safetyToggle.disabled = true;
+            // Keep button visible but locked state
+            els.btnFinish.classList.add('locked-btn');
+            els.btnFinish.classList.remove('bg-rose-900');
 
             const now = audioCtx.currentTime;
             const conf = SCENE_CONFIG[currentScene];
@@ -473,14 +543,14 @@
                 els.tabEntrance.classList.remove('opacity-20');
                 els.tabExit.classList.remove('opacity-20');
                 
-                els.safetyToggle.disabled = false; // Enable toggle for next run
+                els.safetyToggle.disabled = false; 
 
                 softResetUI();
 
             }, 3000);
         }
 
-        // --- 4. Dashboard (No changes, same as previous) ---
+        // --- 4. Dashboard (No changes) ---
         function updateDashboard() {
             if (!isPlaying) return;
 
